@@ -4,13 +4,14 @@
 ## code can be ported into a node server with the following dependencies
 
 ## dependencies:
-
+###
 ## node 16
 ## express
 ## node-fetch@2
 ## body-parser
 ## cors
-
+###
+## more details:
 ## demo tool: https://finch.cxiv.io/
 ## reach out to christian@tryfinch.com with any questions
 
