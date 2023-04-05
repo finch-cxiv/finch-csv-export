@@ -1,6 +1,16 @@
 # finch-csv-export
-## node app for converting pay-statement data from Finch into a flat CSV file
+## this is a vanilla JS script that transforms Finch JSON data into a flat CSV
+
+## code can be ported into a node server with the following dependencies
+
+## dependencies:
+
+## node 16
+## express
+## node-fetch@2
+## body-parser
+## cors
 
 ## demo tool: https://finch.cxiv.io/
-## documentation: https://finch.cxiv.io/docs.pdf
+## reach out to christian@tryfinch.com with any questions
 
