@@ -1,6 +1,7 @@
 /**
-* This is a description
-* @namespace diopsi.de
+* this was developed as a frontend JS tool for exporting tryfinch.com data as a flat CSV - this tool flattens pay-statements
+* and enhances pay-statement lines with directory and payment data - visit finch.cxiv.io for more detail
+* @namespace finch.cxiv.io
 * @method ~~~~~~~~~
 * @param {String} some string
 * @param {Object} some object
@@ -17,6 +18,8 @@ function object_api_finch() { return { URL: "https://test.cxiv.io" }; }
 function object_element() { return [{ id: "finch-logo", tag: "logo" }, { id: "connect-button" }]; }
 function object_class() { return ["animate-draw", "animate-erase", "visible", "hidden", "fade-display", "fade-hide"]; }
 
+// FIRST FUNCTION - everything flows from here
+// this where we execute initial network calls to get directory+payment+pay-statement data from Finch for transformation
 async function kickoff_process() {
     var startdate = document.getElementById('start-date').value
     var enddate = document.getElementById('end-date').value
@@ -85,6 +88,9 @@ async function kickoff_process() {
 
 }
 
+// function for making API calls to api.tryfinch.com - currently goes through a hosted server that interacts directly with
+// api.tryfinch.com but this should be pointed directly towards api.tryfinch.com if implemented as a node server
+// CALLED BY: function kickoff_process
 async function api_finch(URL, method, resource, data) {
 
     var URL = object_api_finch().URL
@@ -114,6 +120,8 @@ async function api_finch(URL, method, resource, data) {
     return return_data
 };
 
+// this function builds the full array table that is subsequently converted into a CSV by function export_csv
+// CALLED BY: function kickoff_process
 function build_flat_list_deliver(DIRECTORY, PAYMENT, PAYMENT_STATEMENT) {
 
     var complete_JSON_table = build_json_table(DIRECTORY, PAYMENT, PAYMENT_STATEMENT)
@@ -364,6 +372,8 @@ function build_flat_list_deliver(DIRECTORY, PAYMENT, PAYMENT_STATEMENT) {
 
 }
 
+// this function builds the JSON table (array of objects) that is subsequently converted into a full array table by function build_flat_list_deliver
+// CALLED BY: function build_flat_list_deliver
 function build_json_table(DIRECTORY, PAYMENT, PAYMENT_STATEMENT) {
     var directory = DIRECTORY.individuals
     var payment = PAYMENT
@@ -382,6 +392,8 @@ function build_json_table(DIRECTORY, PAYMENT, PAYMENT_STATEMENT) {
 
 }
 
+// this function flattens pay-statements to the line-level
+// CALLED BY: function build_json_table
 function flatten_pay_statement(pay_statement_list) {
 
     var pay_statement_list_length = pay_statement_list.length
@@ -408,6 +420,10 @@ function flatten_pay_statement(pay_statement_list) {
     return pay_statement_flattened;
 }
 
+// this function builds the column groups for the EARNINGS/TAXES/DEDUCTIONS/CONTRIBUTIONS super headers
+// these groups are built dynamically based on uniquness of type+name+employer+pre_tax fields when available in the group
+// for instance EARNINGS only uses type+name but TAXES uses type+name+employer
+// CALLED BY: function build_flat_list_deliver
 function build_column_groups(pay_statement_flattened) {
 
     pay_statement_flattened_length = pay_statement_flattened.length
@@ -472,6 +488,8 @@ function build_column_groups(pay_statement_flattened) {
     return column_groups;
 }
 
+// this function renames a keys for all objects in a JSON table
+// CALLED BY: function build_json_table
 function renameKeyInJsonTable(jsonTable, oldKey, newKey) {
     if (oldKey === newKey) {
         return jsonTable;
@@ -486,6 +504,10 @@ function renameKeyInJsonTable(jsonTable, oldKey, newKey) {
     });
 }
 
+// this function looks at two JSON tables (list1+list2) and adds objects to list1 that are present in list2
+// and NOT already in list1 - this is used for building column headers by capturing all unique objects in the
+// EARNINGS/TAXES/DEDUCTIONS/CONTRIBUTIONS lists
+// CALLED BY: function build_column_groups
 function join_ADD_MISSING_OBJECTS(list1, list2, joinKeys) {
     const joinedList = [...list1];
 
@@ -502,6 +524,10 @@ function join_ADD_MISSING_OBJECTS(list1, list2, joinKeys) {
     return joinedList;
 }
 
+// this function takes two JSON tables - arr1 is a longer table with many instances of objects with the same "key" value in
+// arr2 - every object in arr1 that key matches an object in arr2 will get all of arg2 object's unique keys
+// this function is used to enhance the pay-statement data with directory and payment data
+// CALLED BY: function build_json_table
 function join_ADD_MISSING_KEYS(arr1, arr2, key) {
     return arr1.map(obj1 => {
         const matchingObj2 = arr2.filter(obj2 => obj2[key] === obj1[key])[0];
@@ -509,10 +535,42 @@ function join_ADD_MISSING_KEYS(arr1, arr2, key) {
     });
 }
 
+// simply builds and exports a CSV
+// CALLED BY: function kickoff_process
 function export_csv(flat_list_deliver) {
     //BUILD CSV EXPORT
     let csvContent = "data:text/csv;charset=utf-8,"
         + flat_list_deliver.map(e => e.join(",")).join("\n");
     var encodedUri = encodeURI(csvContent);
     window.open(encodedUri);
+}
+
+//UI based function irrelevant to data transformation
+function display_detail(){
+    document.getElementById('escape').classList.remove('animate-erase');
+    document.getElementById('ACTION-BLOCKS-PREVIEW').classList.remove('fade-in');
+    document.getElementById('welcome_landing').classList.remove('fade-in');
+    document.getElementById('escape_box').classList.remove('fade-out');
+    document.getElementById('detail_page').classList.remove('fade-out');
+    document.getElementById('ACTION-BLOCKS-PREVIEW').classList.add('fade-out');
+    document.getElementById('welcome_landing').classList.add('fade-out');
+    document.getElementById('detail_page').classList.add('fade-in');
+    document.getElementById('escape').classList.add('animate-draw');
+    document.getElementById('escape_box').classList.add('fade-in');
+    
+    
+}
+//UI based function irrelevant to data transformation
+function display_main(){
+    document.getElementById('escape').classList.remove('animate-draw');
+    document.getElementById('escape_box').classList.remove('fade-in');
+    document.getElementById('escape_box').classList.remove('fade-in');
+    document.getElementById('detail_page').classList.remove('fade-in');
+    document.getElementById('ACTION-BLOCKS-PREVIEW').classList.remove('fade-out');
+    document.getElementById('welcome_landing').classList.remove('fade-out');
+    document.getElementById('escape_box').classList.add('fade-out');
+    document.getElementById('detail_page').classList.add('fade-out');
+    document.getElementById('ACTION-BLOCKS-PREVIEW').classList.add('fade-in');
+    document.getElementById('welcome_landing').classList.add('fade-in');
+    document.getElementById('escape').classList.add('animate-erase');
 }
