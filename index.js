@@ -1,124 +1,147 @@
-/**
-* this was developed as a frontend JS tool for exporting tryfinch.com data as a flat CSV - this tool flattens pay-statements
-* and enhances pay-statement lines with directory and payment data - visit finch.cxiv.io for more detail
-* @namespace finch.cxiv.io
-* @method ~~~~~~~~~
-* @param {String} some string
-* @param {Object} some object
-* @return {bool} some bool
-*/
+const fetch = require("node-fetch");
+var express = require('express');
+var cors = require('cors');
+var bodyParser = require('body-parser');
+var app = express();
+var _ = require('lodash');
+app.use(express.text())
+app.use(express.urlencoded({ extended: true }))
+app.use(cors());
+app.use(bodyParser.json());
+const port_LOCAL = 3000
 
-let URL_client = (new URL(document.location));
-let params = (new URL(document.location)).searchParams;
-let code = params.get('code');
-let grand_object = { directory: "blank", payment: "blank", pay_statement: "blank", status: { directory: "null", payment: "null", pay_statement: "null" } }
+var server_LOCAL = app.listen(port_LOCAL, () => {
+    console.log(`finch-csv-export listening on port ${port_LOCAL}`)
+})
 
-function object_api_finch() { return { URL: "https://test.cxiv.io" }; }
-//function object_api_finch() { return {URL:"http://localhost:3000"};}
-function object_element() { return [{ id: "finch-logo", tag: "logo" }, { id: "connect-button" }]; }
-function object_class() { return ["animate-draw", "animate-erase", "visible", "hidden", "fade-display", "fade-hide"]; }
+var grand_object = {
+    URL_FINCH: "https://api.tryfinch.com",
+    FINCH_API_VERSION: "2020-09-17",
+    AUTHORIZATION: "Bearer <YOUR ACCESS TOKEN>",
+    directory: "empty",
+    payment: "empty",
+    payment_id: {requests:"empty"},
+    pay_statement: "empty",
+    status: { directory: "null", payment: "null", pay_statement: "null" },
+    csv_date_query: "empty"
+};
+
+var URL_REQUEST = "";
+var HEADERS = { nothing: "nothing" };
+var DATA_R = { nothing: "nothing" };
+
+app.get('/', (req, res) => {
+    console.log("/root request just ran")
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    res.send("just a root - the Finch CSV export API is up and running")
+    res.end();
+})
+
+app.get('/hello', (req, res) => {
+    console.log("/hello ran")
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    res.send("the Finch CSV export API is up and running")
+    res.end();
+})
+
+app.post('/export-csv-pay-statements', (req, res) => {
+    console.log("/export-csv-pay-statements ran")
+    grand_object.csv_date_query = req.body
+    transform()
+    .then((response) => {
+        if (response.type === "CSV") {
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', 'attachment; filename="pay-statements.csv"');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.send(response.data)
+            res.end();
+          } 
+        else {
+            res.setHeader('Content-Type', 'application/json');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.send(response.data)
+            res.end();
+        }   
+    })
+})
+
+async function api_finch(resource, method, data, params) {
+    URL_REQUEST = grand_object.URL_FINCH + resource + new URLSearchParams(params).toString()
+    console.log(URL_REQUEST)
+    if (resource === '/auth/token') {
+        HEADERS = {
+            'Content-Type': 'application/json'
+        }
+    }
+    else {
+        HEADERS = {
+            Authorization: grand_object.AUTHORIZATION,
+            'Finch-API-Version': grand_object.FINCH_API_VERSION,
+            'Content-Type': 'application/json'
+        }
+    }
+
+    if (method === 'GET') {
+        var BODY_R = null
+    }
+    else {
+        var BODY_R = JSON.stringify(data)
+    }
+
+    var data_resolve = await fetch(URL_REQUEST, { method: method, headers: HEADERS, body: BODY_R })
+        .then(data => data.json())
+        .then(data => {
+            DATA_R = data
+            return (DATA_R)
+        })
+        .catch((error) => {
+            console.error(error)
+        })
+    return data_resolve
+}
+// ORIGINAL CODE BELOW
+// ORIGINAL CODE BELOW
+// ORIGINAL CODE BELOW
+// ORIGINAL CODE BELOW
+// ORIGINAL CODE BELOW
+// ORIGINAL CODE BELOW
+// ORIGINAL CODE BELOW
+// ORIGINAL CODE BELOW
+// ORIGINAL CODE BELOW
 
 // FIRST FUNCTION - everything flows from here
 // this where we execute initial network calls to get directory+payment+pay-statement data from Finch for transformation
-async function kickoff_process() {
-    var startdate = document.getElementById('start-date').value
-    var enddate = document.getElementById('end-date').value
-    var parameters = {
-        start_date: startdate,
-        end_date: enddate,
-    }
-    document.getElementById("status_directory").innerHTML = "getting directory...";
-    document.getElementById("status_payments").innerHTML = "getting payments...";
-    document.getElementById("status_pay_statements").innerHTML = "getting pay statements...";
-    var fetch_return_directory = await api_finch('default', 'GET', 'directory');
-    if (fetch_return_directory.code === 429) {
-        document.getElementById("status_directory").innerHTML = "Finch rate limit hit (429) give it a minute";
-        document.getElementById("status_payments").innerHTML = "Finch rate limit hit (429) give it a minute";
-        document.getElementById("status_pay_statements").innerHTML = "Finch rate limit hit (429) give it a minute";
-    }
-    else {
-        grand_object.directory = fetch_return_directory;
-        grand_object.status.directory = "GO"
-        var directory_length = grand_object.directory.individuals.length;
-        document.getElementById("status_directory").innerHTML = "loaded " + directory_length + " individuals";
-        var fetch_return_payments = await api_finch('default', 'POST', 'payment', parameters);
-        var length_payments = fetch_return_payments.length
-        if (fetch_return_payments.code === 429) {
-            document.getElementById("status_payments").innerHTML = "Finch rate limit hit (429) give it a minute";
-            document.getElementById("status_pay_statements").innerHTML = "Finch rate limit hit (429) give it a minute";
-        }
-        else if (length_payments === 0) {
-            document.getElementById("status_payments").innerHTML = "no payments for selected range";
-            document.getElementById("status_pay_statements").innerHTML = "no payments for selected range";
-        }
-        else {
-            grand_object.payment = fetch_return_payments;
-            grand_object.status.payment = "GO"
-            var payments_length = grand_object.payment.length;
-            document.getElementById("status_payments").innerHTML = "loaded " + payments_length + " payments";
-            var payment_id_list = []
-            var payment_id_length = grand_object.payment.length
-            for (let i = 0; i < payment_id_length; i++) {
-                id_value = grand_object.payment[i].id
-                push_value = { payment_id: id_value }
-                payment_id_list.push(push_value)
-            }
-            payment_id_list = { requests: payment_id_list }
-            var fetch_return_pay_statements = await api_finch('default', 'POST', 'pay-statement', payment_id_list);
-            if (fetch_return_pay_statements.code === 429) {
-                document.getElementById("status_pay_statements").innerHTML = "Finch rate limit hit (429) give it a minute";
-            }
-            else {
-                grand_object.pay_statement = fetch_return_pay_statements;
-                grand_object.status.pay_statement = "GO";
-                var pay_statement_length = grand_object.pay_statement.responses.length;
-                document.getElementById("status_pay_statements").innerHTML = "loaded " + pay_statement_length + " pay statements";
-            }
-        
-        }
-    }
 
-    console.log('GRAND_OBJECT')
-    console.log(grand_object)
+async function transform() {
+      //DIRECTORY
+      grand_object.directory = await api_finch('/employer/directory', 'GET', 'null');
+      if (grand_object.directory.code === 429) {
+        return {type:"JSON",data: grand_object.directory};
+      }
+      
+      //PAYMENT
+      grand_object.payment = await api_finch('/employer/payment?', 'GET', null, grand_object.csv_date_query)
+      length_payment = grand_object.payment.length
+      if (grand_object.payment.code === 400 || grand_object.payment.code === 429) {
+        return {type:"JSON",data: grand_object.payment};
+      }
+      else if (length_payment === 0) {
+        return {type:"JSON",data: {status:"ERROR",code:"400",notes:"no payments for selected range - please expand date range"}};
+      }
 
-    if (grand_object.status.pay_statement === "GO" && grand_object.status.payment === "GO" && grand_object.status.directory === "GO") {
-        var export_array = build_flat_list_deliver(grand_object.directory, grand_object.payment, grand_object.pay_statement);
-        export_csv(export_array);
-    }
+      //PAY-STATEMENT
+      grand_object.payment_id.requests = grand_object.payment.map((item) => {return { payment_id: item.id };});
+      grand_object.pay_statement = await api_finch('/employer/pay-statement', 'POST', grand_object.payment_id)
 
+
+      var export_array = build_flat_list_deliver(grand_object.directory, grand_object.payment, grand_object.pay_statement);
+      var csv_complete = export_csv(export_array)
+
+      return {type:"CSV",data: csv_complete};
+  
 }
-
-// function for making API calls to api.tryfinch.com - currently goes through a hosted server that interacts directly with
-// api.tryfinch.com but this should be pointed directly towards api.tryfinch.com if implemented as a node server
-// CALLED BY: function kickoff_process
-async function api_finch(URL, method, resource, data) {
-
-    var URL = object_api_finch().URL
-    console.log("api_finch: " + method + " " + URL + "/" + resource)
-    console.log(data)
-
-    var return_data = await fetch(URL + "/" + resource, {
-        method: method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    })
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error(`HTTP error, status = ${response.status}`);
-            }
-            return response.json();
-        })
-        .then((my_json) => {
-            var my_json = my_json;
-            return my_json
-        })
-        .catch((error) => {
-            const p = document.createElement("p");
-            p.appendChild(document.createTextNode(`Error: ${error.message}`));
-        });
-
-    return return_data
-};
 
 // this function builds the full array table that is subsequently converted into a CSV by function export_csv
 // CALLED BY: function kickoff_process
@@ -535,42 +558,13 @@ function join_ADD_MISSING_KEYS(arr1, arr2, key) {
     });
 }
 
-// simply builds and exports a CSV
+// builds a CSV
 // CALLED BY: function kickoff_process
 function export_csv(flat_list_deliver) {
     //BUILD CSV EXPORT
     let csvContent = "data:text/csv;charset=utf-8,"
         + flat_list_deliver.map(e => e.join(",")).join("\n");
     var encodedUri = encodeURI(csvContent);
-    window.open(encodedUri);
-}
 
-//UI based function irrelevant to data transformation
-function display_detail(){
-    document.getElementById('escape').classList.remove('animate-erase');
-    document.getElementById('ACTION-BLOCKS-PREVIEW').classList.remove('fade-in');
-    document.getElementById('welcome_landing').classList.remove('fade-in');
-    document.getElementById('escape_box').classList.remove('fade-out');
-    document.getElementById('detail_page').classList.remove('fade-out');
-    document.getElementById('ACTION-BLOCKS-PREVIEW').classList.add('fade-out');
-    document.getElementById('welcome_landing').classList.add('fade-out');
-    document.getElementById('detail_page').classList.add('fade-in');
-    document.getElementById('escape').classList.add('animate-draw');
-    document.getElementById('escape_box').classList.add('fade-in');
-    
-    
-}
-//UI based function irrelevant to data transformation
-function display_main(){
-    document.getElementById('escape').classList.remove('animate-draw');
-    document.getElementById('escape_box').classList.remove('fade-in');
-    document.getElementById('escape_box').classList.remove('fade-in');
-    document.getElementById('detail_page').classList.remove('fade-in');
-    document.getElementById('ACTION-BLOCKS-PREVIEW').classList.remove('fade-out');
-    document.getElementById('welcome_landing').classList.remove('fade-out');
-    document.getElementById('escape_box').classList.add('fade-out');
-    document.getElementById('detail_page').classList.add('fade-out');
-    document.getElementById('ACTION-BLOCKS-PREVIEW').classList.add('fade-in');
-    document.getElementById('welcome_landing').classList.add('fade-in');
-    document.getElementById('escape').classList.add('animate-erase');
+    return encodedUri;
 }
