@@ -1,6 +1,6 @@
 # finch-csv-export
 
-[the Finch API](https://tryfinch.com/) provides access to over 190 HRIS and payroll systems and returns data in a JSON format - a common business format for data analysis is a [flat CSV](https://en.wikipedia.org/wiki/Comma-separated_values) that teams can read in excel
+[the Finch API](https://tryfinch.com/) provides access to over 190 [HRIS](https://en.wikipedia.org/wiki/Human_resources_information_systems) and [payroll](https://en.wikipedia.org/wiki/Payroll_automation) platforms and returns data in a JSON format - while JSON is very flexible, a more common business format for data analysis is [a CSV file](https://en.wikipedia.org/wiki/Comma-separated_values) that teams can read in excel, google sheets, or any preferred spreadsheet tool
 
 this application transforms Finch JSON data into a flat CSV that can be exported and opened in Excel, Google Sheets etc.
 
