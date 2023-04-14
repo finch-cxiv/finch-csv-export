@@ -1,8 +1,7 @@
 # finch-csv-export
-
 [the Finch API](https://tryfinch.com/) provides access to data in a standardized JSON format from over 190 [HRIS](https://en.wikipedia.org/wiki/Human_resources_information_systems) and [payroll](https://en.wikipedia.org/wiki/Payroll_automation) platforms - while JSON is flexible, a more common business format for data analysis is [a CSV file](https://en.wikipedia.org/wiki/Comma-separated_values) that teams can read in Excel, Google Sheets, or any preferred spreadsheet tool
 
-this application transforms [Finch Payroll data](https://developer.tryfinch.com/docs/reference/b811fdc2542ca-payment) into a flat CSV that can be exported and opened in Excel, Google Sheets, or any preferred spreadsheet tool
+this application transforms [Finch Payroll data](https://developer.tryfinch.com/docs/reference/b811fdc2542ca-payment) into a flat CSV
 
 when configured with an access token, this application will export [pay-statements](https://developer.tryfinch.com/docs/reference/d5fd02c41e83a-pay-statement) dated with a start_date and an end_date
 
@@ -11,21 +10,13 @@ when configured with an access token, this application will export [pay-statemen
 ***
 
 
-## 🚀 getting started
+## 🚀 getting started 🚀  
+  
+### 📝 prerequisites 📝:
 
-### 📝 prerequisites:
-
-[register](https://dashboard.tryfinch.com/signup) for a Finch sandbox application and [generate an access token](https://developer.tryfinch.com/docs/reference/00c032eb7c265-quickstart)
-
-### 🛠️ basic setup:
-
-define the necessary Finch configuration values within the index.js script as follows:
-
-```
-# your access token
-GRAND_OBJECT.AUTHORIZATION=Bearer <YOUR ACCESS TOKEN>
-```
-### 🏃🏻‍♂️ start local application:
+[register](https://dashboard.tryfinch.com/signup) for a Finch application and [generate an access token](https://developer.tryfinch.com/docs/reference/00c032eb7c265-quickstart)  
+  
+### 🏃🏻‍♂️ start local application 🏃🏻‍♂️:
 
 1. start by installing the dependencies of this project: `npm install`
 
@@ -37,8 +28,9 @@ GRAND_OBJECT.AUTHORIZATION=Bearer <YOUR ACCESS TOKEN>
 # request body
 
 {
-start_date: "2022-08-01",
-end_date: "2022-01-01",
+authorization:"Bearer <YOUR ACCESS TOKEN>",
+start_date: "2022-01-01",
+end_date: "2022-08-01",
 }
 
 ```
@@ -50,7 +42,7 @@ end_date: "2022-01-01",
 
 #### ~
 
-#### node version: [v16.19.1](https://nodejs.org/en/blog/release/v16.19.1) | node modules: [express](https://www.npmjs.com/package/express) | [node-fetch@2](https://www.npmjs.com/package/node-fetch) | [body-parser](https://www.npmjs.com/package/body-parser) | [cors](https://www.npmjs.com/package/cors) | [lodash](https://lodash.com/)
+#### node version: [v16.19.1](https://nodejs.org/en/blog/release/v16.19.1) | node modules: [express](https://www.npmjs.com/package/express) | [node-fetch@2](https://www.npmjs.com/package/node-fetch) | [body-parser](https://www.npmjs.com/package/body-parser) | [cors](https://www.npmjs.com/package/cors) | [lodash](https://lodash.com/) | [csv-writer](https://www.npmjs.com/package/csv-writer)
 
 #### ~
 

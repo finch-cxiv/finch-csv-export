@@ -9,6 +9,8 @@ app.use(express.urlencoded({ extended: true }))
 app.use(cors());
 app.use(bodyParser.json());
 const port_LOCAL = 3000
+const fs = require('fs');
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 
 var server_LOCAL = app.listen(port_LOCAL, () => {
     console.log(`finch-csv-export listening on port ${port_LOCAL}`)
@@ -18,7 +20,7 @@ var server_LOCAL = app.listen(port_LOCAL, () => {
 var GRAND_OBJECT = {
     URL_FINCH: "https://api.tryfinch.com",
     FINCH_API_VERSION: "2020-09-17",
-    AUTHORIZATION: "Bearer <YOUR ACCESS TOKEN>",
+    AUTHORIZATION: "empty",
     DIRECTORY: "empty",
     PAYMENT: "empty",
     PAYMENT_ID: {requests:"empty"},
@@ -47,16 +49,26 @@ app.get('/hello', (req, res) => {
 //SERVER ENDPOINT CSV TRANSFORM
 app.post('/export-csv-pay-statements', (req, res) => {
     console.log("/export-csv-pay-statements ran")
-    GRAND_OBJECT.CSV_DATE_QUERY = req.body
+    GRAND_OBJECT.CSV_DATE_QUERY = {
+        start_date:req.body.start_date,
+        end_date:req.body.end_date}
+    GRAND_OBJECT.AUTHORIZATION = req.body.authorization
     transform()
     .then((response) => {
         // if CSV is set to go
         if (response.type === "CSV") {
-            res.setHeader('Content-Type', 'text/csv');
-            res.setHeader('Content-Disposition', 'attachment; filename="pay-statements.csv"');
-            res.setHeader('Access-Control-Allow-Origin', '*');
-            res.send(response.data)
-            res.end();
+            res.download(response.data, 'pay-statement.csv', (err) => {
+                if (err) {
+                  console.error('Error sending file:', err);
+                  res.status(500).send('Error sending file');
+                } else {
+                  fs.unlink(response.data, (err) => {
+                    if (err) {
+                      console.error('Error deleting file:', err);
+                    }
+                  });
+                }
+              });
           }
         //ERROR handling - if some 404 etc comes back from network calls
         else {
@@ -129,7 +141,7 @@ async function transform() {
 
 
       var export_array = build_flat_list_deliver(GRAND_OBJECT.DIRECTORY, GRAND_OBJECT.PAYMENT, GRAND_OBJECT.PAY_STATEMENT);
-      var csv_complete = export_csv(export_array)
+      var csv_complete = await export_csv(export_array)
 
       return {type:"CSV",data: csv_complete};
   
@@ -551,12 +563,18 @@ function join_ADD_MISSING_KEYS(arr1, arr2, key) {
 }
 
 // builds a CSV
-// CALLED BY: function kickoff_process
-function export_csv(flat_list_deliver) {
-    //BUILD CSV EXPORT
-    let csvContent = "data:text/csv;charset=utf-8,"
-        + flat_list_deliver.map(e => e.join(",")).join("\n");
-    var encodedUri = encodeURI(csvContent);
+// CALLED BY: function transform
+async function export_csv(flat_list_deliver) {
+  const csvWriter = createCsvWriter({
+    path: 'output.csv',
+    header: Object.keys(flat_list_deliver[0]).map((key) => ({
+      id: key,
+      title: key,
+    })),
+  });
 
-    return encodedUri;
+  await csvWriter.writeRecords(flat_list_deliver);
+
+  return 'output.csv';
 }
+
