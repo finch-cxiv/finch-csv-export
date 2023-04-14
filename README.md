@@ -1,31 +1,31 @@
 # finch-csv-export
 
-[the Finch API](https://tryfinch.com/) provides access to over 190 [HRIS](https://en.wikipedia.org/wiki/Human_resources_information_systems) and [payroll](https://en.wikipedia.org/wiki/Payroll_automation) platforms and returns data in a JSON format - while JSON is very flexible, a more common business format for data analysis is [a CSV file](https://en.wikipedia.org/wiki/Comma-separated_values) that teams can read in excel, google sheets, or any preferred spreadsheet tool
+[the Finch API](https://tryfinch.com/) provides access to data in JSON format from over 190 [HRIS](https://en.wikipedia.org/wiki/Human_resources_information_systems) and [payroll](https://en.wikipedia.org/wiki/Payroll_automation) platforms - while JSON is flexible, a more common business format for data analysis is [a CSV file](https://en.wikipedia.org/wiki/Comma-separated_values) that teams can read in Excel, Google Sheets, or any preferred spreadsheet tool
 
-this application transforms Finch JSON data into a flat CSV that can be exported and opened in Excel, Google Sheets etc.
+this application transforms [Finch Payroll data](https://developer.tryfinch.com/docs/reference/b811fdc2542ca-payment) into a flat CSV that can be exported and opened in Excel, Google Sheets, or any preferred spreadsheet tool
 
 when configured with an access token, this application will export [pay-statements](https://developer.tryfinch.com/docs/reference/d5fd02c41e83a-pay-statement) dated with a start_date and an end_date
 
-[pay-statements](https://developer.tryfinch.com/docs/reference/d5fd02c41e83a-pay-statement) are flattened to the pay-statement-line-level (that is some unique combination of individual_id + payment_id) and enhanced with [payment](https://developer.tryfinch.com/docs/reference/b811fdc2542ca-payment) date (for payment dates) and [directory](https://developer.tryfinch.com/docs/reference/12419c085fc0e-directory) data (for individual names)
+[pay-statements](https://developer.tryfinch.com/docs/reference/d5fd02c41e83a-pay-statement) are flattened to the pay-statement-line-level (that is some unique combination of individual_id + payment_id) and enhanced with [payment](https://developer.tryfinch.com/docs/reference/b811fdc2542ca-payment) data (for payment dates) and [directory](https://developer.tryfinch.com/docs/reference/12419c085fc0e-directory) data (for individual names)
 
 ***
 
 
 ## 🚀 getting started
 
-### prerequisites:
+### 📝 prerequisites:
 
-[Register](https://dashboard.tryfinch.com/signup) for a Finch sandbox application and [generate an access token](https://developer.tryfinch.com/docs/reference/00c032eb7c265-quickstart)
+[register](https://dashboard.tryfinch.com/signup) for a Finch sandbox application and [generate an access token](https://developer.tryfinch.com/docs/reference/00c032eb7c265-quickstart)
 
-### basic setup:
+### 🛠️ basic setup:
 
 define the necessary Finch configuration values within the index.js script as follows:
 
 ```
 # your access token
-grand_object.AUTHORIZATION=Bearer <YOUR ACCESS TOKEN>
+GRAND_OBJECT.AUTHORIZATION=Bearer <YOUR ACCESS TOKEN>
 ```
-### start local application:
+### 🏃🏻‍♂️ start local application:
 
 1. start by installing the dependencies of this project: `npm install`
 

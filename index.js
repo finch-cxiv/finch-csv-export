@@ -14,22 +14,20 @@ var server_LOCAL = app.listen(port_LOCAL, () => {
     console.log(`finch-csv-export listening on port ${port_LOCAL}`)
 })
 
-var grand_object = {
+//ALL VARIABLES HELD HERE
+var GRAND_OBJECT = {
     URL_FINCH: "https://api.tryfinch.com",
     FINCH_API_VERSION: "2020-09-17",
-    AUTHORIZATION: "Bearer <YOUR ACCESS TOKEN>",
-    directory: "empty",
-    payment: "empty",
-    payment_id: {requests:"empty"},
-    pay_statement: "empty",
-    status: { directory: "null", payment: "null", pay_statement: "null" },
-    csv_date_query: "empty"
+    //AUTHORIZATION: "Bearer <YOUR ACCESS TOKEN>",
+    AUTHORIZATION: "Bearer a27549f6-5630-45a3-b80d-697b45533a03",
+    DIRECTORY: "empty",
+    PAYMENT: "empty",
+    PAYMENT_ID: {requests:"empty"},
+    PAY_STATEMENT: "empty",
+    CSV_DATE_QUERY: "empty"
 };
 
-var URL_REQUEST = "";
-var HEADERS = { nothing: "nothing" };
-var DATA_R = { nothing: "nothing" };
-
+//SERVER ENDPOINT ROOT
 app.get('/', (req, res) => {
     console.log("/root request just ran")
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -38,6 +36,7 @@ app.get('/', (req, res) => {
     res.end();
 })
 
+//SERVER ENDPOINT HELLO
 app.get('/hello', (req, res) => {
     console.log("/hello ran")
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -46,18 +45,21 @@ app.get('/hello', (req, res) => {
     res.end();
 })
 
+//SERVER ENDPOINT CSV TRANSFORM
 app.post('/export-csv-pay-statements', (req, res) => {
     console.log("/export-csv-pay-statements ran")
-    grand_object.csv_date_query = req.body
+    GRAND_OBJECT.CSV_DATE_QUERY = req.body
     transform()
     .then((response) => {
+        // if CSV is set to go
         if (response.type === "CSV") {
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader('Content-Disposition', 'attachment; filename="pay-statements.csv"');
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.send(response.data)
             res.end();
-          } 
+          }
+        //ERROR handling - if some 404 etc comes back from network calls
         else {
             res.setHeader('Content-Type', 'application/json');
             res.setHeader('Access-Control-Allow-Origin', '*');
@@ -67,9 +69,11 @@ app.post('/export-csv-pay-statements', (req, res) => {
     })
 })
 
+// network calls to Finch api
 async function api_finch(resource, method, data, params) {
-    URL_REQUEST = grand_object.URL_FINCH + resource + new URLSearchParams(params).toString()
+    URL_REQUEST = GRAND_OBJECT.URL_FINCH + resource + new URLSearchParams(params).toString()
     console.log(URL_REQUEST)
+
     if (resource === '/auth/token') {
         HEADERS = {
             'Content-Type': 'application/json'
@@ -77,8 +81,8 @@ async function api_finch(resource, method, data, params) {
     }
     else {
         HEADERS = {
-            Authorization: grand_object.AUTHORIZATION,
-            'Finch-API-Version': grand_object.FINCH_API_VERSION,
+            Authorization: GRAND_OBJECT.AUTHORIZATION,
+            'Finch-API-Version': GRAND_OBJECT.FINCH_API_VERSION,
             'Content-Type': 'application/json'
         }
     }
@@ -101,42 +105,31 @@ async function api_finch(resource, method, data, params) {
         })
     return data_resolve
 }
-// ORIGINAL CODE BELOW
-// ORIGINAL CODE BELOW
-// ORIGINAL CODE BELOW
-// ORIGINAL CODE BELOW
-// ORIGINAL CODE BELOW
-// ORIGINAL CODE BELOW
-// ORIGINAL CODE BELOW
-// ORIGINAL CODE BELOW
-// ORIGINAL CODE BELOW
 
-// FIRST FUNCTION - everything flows from here
-// this where we execute initial network calls to get directory+payment+pay-statement data from Finch for transformation
-
+//FIRST FUCNTION - called from app.post /export-csv-pay-statements endpoint
 async function transform() {
       //DIRECTORY
-      grand_object.directory = await api_finch('/employer/directory', 'GET', 'null');
-      if (grand_object.directory.code === 429) {
-        return {type:"JSON",data: grand_object.directory};
+      GRAND_OBJECT.DIRECTORY = await api_finch('/employer/directory', 'GET', 'null');
+      if (GRAND_OBJECT.DIRECTORY.code === 429) {
+        return {type:"JSON",data: GRAND_OBJECT.DIRECTORY};
       }
       
       //PAYMENT
-      grand_object.payment = await api_finch('/employer/payment?', 'GET', null, grand_object.csv_date_query)
-      length_payment = grand_object.payment.length
-      if (grand_object.payment.code === 400 || grand_object.payment.code === 429) {
-        return {type:"JSON",data: grand_object.payment};
+      GRAND_OBJECT.PAYMENT = await api_finch('/employer/payment?', 'GET', null, GRAND_OBJECT.CSV_DATE_QUERY)
+      length_PAYMENT = GRAND_OBJECT.PAYMENT.length
+      if (GRAND_OBJECT.PAYMENT.code === 400 || GRAND_OBJECT.PAYMENT.code === 429) {
+        return {type:"JSON",data: GRAND_OBJECT.PAYMENT};
       }
-      else if (length_payment === 0) {
+      else if (length_PAYMENT === 0) {
         return {type:"JSON",data: {status:"ERROR",code:"400",notes:"no payments for selected range - please expand date range"}};
       }
 
       //PAY-STATEMENT
-      grand_object.payment_id.requests = grand_object.payment.map((item) => {return { payment_id: item.id };});
-      grand_object.pay_statement = await api_finch('/employer/pay-statement', 'POST', grand_object.payment_id)
+      GRAND_OBJECT.PAYMENT_ID.requests = GRAND_OBJECT.PAYMENT.map((item) => {return { payment_id: item.id };});
+      GRAND_OBJECT.PAY_STATEMENT = await api_finch('/employer/pay-statement', 'POST', GRAND_OBJECT.PAYMENT_ID)
 
 
-      var export_array = build_flat_list_deliver(grand_object.directory, grand_object.payment, grand_object.pay_statement);
+      var export_array = build_flat_list_deliver(GRAND_OBJECT.DIRECTORY, GRAND_OBJECT.PAYMENT, GRAND_OBJECT.PAY_STATEMENT);
       var csv_complete = export_csv(export_array)
 
       return {type:"CSV",data: csv_complete};
@@ -144,7 +137,7 @@ async function transform() {
 }
 
 // this function builds the full array table that is subsequently converted into a CSV by function export_csv
-// CALLED BY: function kickoff_process
+// CALLED BY: function transform
 function build_flat_list_deliver(DIRECTORY, PAYMENT, PAYMENT_STATEMENT) {
 
     var complete_JSON_table = build_json_table(DIRECTORY, PAYMENT, PAYMENT_STATEMENT)
@@ -398,18 +391,18 @@ function build_flat_list_deliver(DIRECTORY, PAYMENT, PAYMENT_STATEMENT) {
 // this function builds the JSON table (array of objects) that is subsequently converted into a full array table by function build_flat_list_deliver
 // CALLED BY: function build_flat_list_deliver
 function build_json_table(DIRECTORY, PAYMENT, PAYMENT_STATEMENT) {
-    var directory = DIRECTORY.individuals
+    var DIRECTORY = DIRECTORY.individuals
     var payment = PAYMENT
     var pay_statement = PAYMENT_STATEMENT.responses
 
     var flat_pay_statement = flatten_pay_statement(pay_statement)
-    var directory_list_rekeyed = renameKeyInJsonTable(directory, 'id', 'individual_id')
+    var DIRECTORY_list_rekeyed = renameKeyInJsonTable(DIRECTORY, 'id', 'individual_id')
     var payment_list_rekeyed = renameKeyInJsonTable(payment, 'id', 'payment_id')
     var payment_list_rekeyed = renameKeyInJsonTable(payment, 'gross_pay', 'payment_full_gross_pay')
     var payment_list_rekeyed = renameKeyInJsonTable(payment, 'net_pay', 'payment_full_net_pay')
 
-    var join_directory_paystatements = join_ADD_MISSING_KEYS(flat_pay_statement, directory_list_rekeyed, 'individual_id')
-    var list_fully_merged = join_ADD_MISSING_KEYS(join_directory_paystatements, payment_list_rekeyed, 'payment_id')
+    var join_DIRECTORY_paystatements = join_ADD_MISSING_KEYS(flat_pay_statement, DIRECTORY_list_rekeyed, 'individual_id')
+    var list_fully_merged = join_ADD_MISSING_KEYS(join_DIRECTORY_paystatements, payment_list_rekeyed, 'payment_id')
 
     return list_fully_merged;
 
@@ -549,7 +542,7 @@ function join_ADD_MISSING_OBJECTS(list1, list2, joinKeys) {
 
 // this function takes two JSON tables - arr1 is a longer table with many instances of objects with the same "key" value in
 // arr2 - every object in arr1 that key matches an object in arr2 will get all of arg2 object's unique keys
-// this function is used to enhance the pay-statement data with directory and payment data
+// this function is used to enhance the pay-statement data with DIRECTORY and payment data
 // CALLED BY: function build_json_table
 function join_ADD_MISSING_KEYS(arr1, arr2, key) {
     return arr1.map(obj1 => {
