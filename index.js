@@ -18,8 +18,7 @@ var server_LOCAL = app.listen(port_LOCAL, () => {
 var GRAND_OBJECT = {
     URL_FINCH: "https://api.tryfinch.com",
     FINCH_API_VERSION: "2020-09-17",
-    //AUTHORIZATION: "Bearer <YOUR ACCESS TOKEN>",
-    AUTHORIZATION: "Bearer a27549f6-5630-45a3-b80d-697b45533a03",
+    AUTHORIZATION: "Bearer <YOUR ACCESS TOKEN>",
     DIRECTORY: "empty",
     PAYMENT: "empty",
     PAYMENT_ID: {requests:"empty"},
